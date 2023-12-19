@@ -1,0 +1,274 @@
+<!-- Created as an example by https://github.com/mcphee11 Version 2.0 -->
+<html>
+  <head>
+    <meta name="robots" content="noindex" />
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Task Routing</title>
+    <meta name="theme-color" content="#ff4f1f" />
+    <link rel="icon" href="./favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Genesys CSS https://spark.genesys.com/ -->
+    <link href="https://dhqbrvplips7x.cloudfront.net/common-ui-docs/genesys-webcomponents/3.8.1-178/genesys-webcomponents/genesys-webcomponents.css" rel="stylesheet" />
+    <script type="module" src="https://dhqbrvplips7x.cloudfront.net/common-ui-docs/genesys-webcomponents/3.8.1-178/genesys-webcomponents/genesys-webcomponents.esm.js"></script>
+    <!-- Genesys SDK info https://developer.genesys.cloud/ -->
+    <script src="https://sdk-cdn.mypurecloud.com/javascript/175.0.0/purecloud-platform-client-v2.min.js"></script>
+  
+  </head>
+
+  
+  <style>
+   body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 120vh;
+}
+
+.container {
+  background-color: #fff;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+form {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+h2 {
+  text-align: center;
+  color: #333;
+}
+
+label {
+  display: block;
+  margin: 10px 0 5px;
+  color: #555;
+}
+
+input,
+textarea, select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  background-color: #4caf50;
+  color: #fff;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+.pn, .AN,.Time,.Pname{
+  display: inline-block;
+  width: 100px;
+  height: 20px;
+  padding: 5px;
+  font-weight:bold;
+
+}
+#mainInfo {
+ border:1px solid  black;
+ border-style: dotted;
+}
+ 
+
+  </style>
+  <title>Nice Web Form</title>
+</head>
+
+
+<body onload="start()">
+
+    <script>
+
+
+        
+         
+        'use strict' //Enables strict mode is JavaScript
+              let url = new URL(document.location.href)
+              let gc_region = url.searchParams.get('gc_region')
+              let gc_clientId = url.searchParams.get('gc_clientId')
+              let gc_redirectUrl = url.searchParams.get('gc_redirectUrl')
+              
+              console.log(url);
+              console.log(gc_region);
+              console.log(gc_clientId);
+              console.log(gc_redirectUrl);
+
+        
+              //Getting and setting the GC details from dynamic URL and session storage
+              gc_region ? sessionStorage.setItem('gc_region', gc_region) : (gc_region = sessionStorage.getItem('gc_region'))
+              gc_clientId ? sessionStorage.setItem('gc_clientId', gc_clientId) : (gc_clientId = sessionStorage.getItem('gc_clientId'))
+              gc_redirectUrl ? sessionStorage.setItem('gc_redirectUrl', gc_redirectUrl) : (gc_redirectUrl = sessionStorage.getItem('gc_redirectUrl'))
+        
+              let platformClient = require('platformClient')
+              const client = platformClient.ApiClient.instance
+              const uapi = new platformClient.UsersApi()
+              const tapi = new platformClient.TaskManagementApi()
+        
+              async function start() {
+                try {
+                  client.setEnvironment(gc_region)
+                  client.setPersistSettings(true, '_mm_')
+        
+                  console.log('%cLogging in to Genesys Cloud', 'color: green')
+                  await client.loginImplicitGrant(gc_clientId, gc_redirectUrl, {})
+        
+                  //GET Current UserId
+                  let user = await uapi.getUsersMe({})
+                  console.log(user)
+        
+                  //Enter in starting code.
+                } catch (err) {
+                  console.log('Error: ', err)
+                }
+              } //End of start() function
+        
+              async function createTask() {
+                try {
+                  //check permissions
+                  Notification.requestPermission().then(function (permission) {
+                    // If the user accepts, let's create a notification
+                    if (permission === 'granted') {
+                      console.log('notification permission granted')
+                    }
+                  })
+                  let unix = Date.now()
+                  let number1 =0;
+                  let number2 =0;
+                  let task = await tapi.postTaskmanagementWorkitems({
+                    name: 'Authority Form Submission - ' + unix,
+                    description: 'Authority and Consent Process',
+                    priority: 15,
+                    workbinId: 'e371cd50-c060-42a9-93a1-9ac705e1efdb',
+                    autoStatusTransition: true,
+                    typeId: 'b49f2808-2387-4fc7-8e75-3c29f570cfcd',
+                    customFields: {
+                      title_text: document.getElementById('Title').value,
+                      first_name_text: document.getElementById('fname').value,
+                      last_name_text: document.getElementById('lname').value,
+                      date_of_birth_date: document.getElementById('DoB').value,
+                      email_longtext: document.getElementById('email').value,
+                      number_integer: number1,
+                      effective_date_date: document.getElementById('date').value,
+                      gender_enum: document.getElementById('gender').value,
+                      number_number: number2,
+                      relatiionship_enum: document.getElementById('relationship').value,
+                      phonenumber_text: document.getElementById('number').value,
+
+
+
+               
+                    },
+                  })
+                  var notification = new Notification('Task Created', {
+                    tag: 'genesys',
+                    body: 'Created: Gsummit - ' + unix,
+                    icon: 'https://dhqbrvplips7x.cloudfront.net/contact-center/5000-5000/img/favicon.ico',
+                  })
+                  window.alert()
+                } catch (err) {
+                  var notification = new Notification('Task Error', {
+                    tag: 'genesys',
+                    body: 'There was an error: ' + err.message,
+                    icon: 'https://dhqbrvplips7x.cloudfront.net/contact-center/5000-5000/img/favicon.ico',
+                  })
+                  console.error(err)
+                }
+              }
+            
+        
+    
+
+        
+        
+          </script>
+
+  <div class="container">
+    <div id="niceForm">
+      <h2>Authority Form & Consent</h2>
+      <p>Please provide the name of the authorised person who you would like to access the policy.</p>
+     <div id="mainInfo"> 
+     <div id="policyNumber"> <span class="PN">Policy Number:</span><span class=""PNumber>87654321</span></div>
+     <div id="policyNumber"> <span class="PN">Policy Owner:</span><span class=""PNumber>Anette Taylor</span></div>
+     <div id="policyNumber"> <span class="PName">Policy Name:</span><span class="PolicyName">HC Level 2- Gold with Signature Extras</span></div>
+     <div id="agentName"> <span class="AN">Agent Name:</span><span class=""PNumber>Isabella</span></div> 
+     </div>
+    
+  
+    
+     
+  
+      
+
+      <label for="Title">Title:</label>
+      <select name="Title" id="Title">
+        <option value="other"></option>
+        <option value="Mr">Mr</option>
+        <option value="Mrs">Mrs</option>
+        <option value="Miss">Miss</option>
+        <option value="Ms">Ms</option>
+
+      </select>
+
+
+     
+      <label for="fname">First Name:</label>
+      <input type="text" id="fname" name="fname" required>
+
+      <label for="lname">Last Name:</label>
+      <input type="text" id="lname" name="lname" required>
+
+    <label for="gender">Gender:</label>
+      <select name="gender" id="gender">
+        <option value=""></option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+    
+
+      </select>
+      <label for="relationship">Relationship:</label>
+      <select name="relationship" id="relationship">
+        <option value=""></option>
+        <option value="Partner">Partner</option>
+        <option value="Dependent">Female</option>
+        <option value="other">Other</option> </select>
+
+      <label for="DOB">Date of Birth:</label>
+      <input type="date" id="DoB" name="Dob" required>
+
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required>
+
+      <label for="PhoneNumber">Phone Number:</label>
+      <input type="number" id="number" name="number" required>
+
+      <label for="date">Effective Date:</label>
+      <input type="date" id="date" name="date" required>
+
+      <label for="message">Message:</label>
+      <textarea id="message" name="message" rows="4" required></textarea>
+
+      <button onclick="createTask()">Submit</button>
+    </div>
+  </div>
+</body>
+</html>
